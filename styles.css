@@ -1,0 +1,591 @@
+:root {
+  --bg: #0f1217;
+  --panel: #161b22;
+  --muted: #8b949e;
+  --text: #c9d1d9;
+  --primary: #58a6ff;
+  --accent: #3fb950;
+  --danger: #f778ba;
+  --border: #30363d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-header, .app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+}
+
+.app-footer {
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  justify-content: center;
+}
+
+.brand { display: flex; align-items: center; gap: 8px; }
+.logo { font-size: 20px; }
+.title { font-weight: 600; }
+
+/* Landing 覆盖层，初始显示 */
+#landing {
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: var(--bg);
+  z-index: 10001;
+}
+#landing .landing-content {
+  text-align: center;
+}
+#landing .brand-large {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+#landing .tagline {
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+/* 页面处于 Landing 模式时，显示覆盖层、隐藏主体 */
+.landing-mode #landing { display: grid; }
+.landing-mode .app-header,
+.landing-mode .app-main,
+.landing-mode .app-footer,
+.landing-mode .floating-btn { display: none; }
+
+/* 播放模式（进入播放页时触发）：全屏视频、浮层设置按钮 */
+.playback-mode .app-main { grid-template-columns: 1fr; }
+.playback-mode .player-container {
+  position: relative;
+  background: black;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+.playback-mode .media.fullscreen-fit {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+}
+.playback-mode .app-header,
+.playback-mode .controls,
+.playback-mode .now-playing,
+.playback-mode .app-footer { display: none; }
+.playback-mode .sidebar {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  width: 380px;
+  max-height: 80vh;
+  display: none;
+  background: rgba(22,27,34,0.72);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  padding: 14px;
+  overflow: auto;
+  z-index: 10000;
+  pointer-events: auto;
+  transform: translateY(-6px);
+  opacity: 0;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.playback-mode .sidebar.open { display: block; transform: translateY(0); opacity: 1; }
+.breath-overlay { pointer-events: none; }
+/* 全局（桌面与移动）覆盖层定位与层级 */
+.breath-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: block;
+  z-index: 10002;
+}
+.breath-label { display: none; }
+.breath-timer { display: none; }
+
+.breath-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(8px, -8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(11,14,18,0.45);
+  color: var(--text);
+  border-radius: 999px;
+  font-size: 13px;
+  backdrop-filter: blur(6px);
+}
+.breath-badge.step-inhale { border-color: #3fb950; }
+.breath-badge.step-retain { border-color: #f59e0b; }
+.breath-badge.step-exhale { border-color: #58a6ff; }
+.breath-badge.step-sustain { border-color: #a78bfa; }
+.breath-badge .badge-icon { font-size: 14px; }
+.breath-badge .badge-text { font-weight: 600; }
+.breath-badge .badge-countdown { color: var(--muted); }
+
+/* 全局呼吸提示控件样式 */
+.breath-cue {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  --color: #3fb950;
+  --dur: 4s;
+  --p: 0;
+  --c1: #00ffc6;
+  --c2: #00ff6a;
+  --glow: 16px;
+}
+.breath-cue::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(farthest-side, transparent 75%, var(--c1) 95%, transparent 100%);
+  filter: blur(12px);
+  opacity: .45;
+  mix-blend-mode: screen;
+}
+.breath-cue::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--c2) 0deg 28deg, transparent 28deg 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 10px), black 0, transparent calc(50% + 0px));
+          mask: radial-gradient(farthest-side, transparent calc(50% - 10px), black 0, transparent calc(50% + 0px));
+  opacity: .4;
+  animation: hud-orbit 8s linear infinite;
+  mix-blend-mode: screen;
+}
+.breath-cue .ring {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 0 24px rgba(0,0,0,0.35);
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+.breath-cue .grid {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.06) 0 1px, transparent 1px 100%),
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.06) 0deg 2deg, transparent 2deg 10deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 70px), black 0);
+          mask: radial-gradient(farthest-side, transparent calc(50% - 70px), black 0);
+  opacity: .25;
+  mix-blend-mode: screen;
+  animation: hud-grid 18s linear infinite;
+}
+.breath-cue .reticle {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02)),
+    linear-gradient(0deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02));
+  opacity: .35;
+  mix-blend-mode: screen;
+  animation: hud-reticle 12s linear infinite;
+}
+.breath-cue .reticle::after {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.18);
+  opacity: .35;
+}
+.breath-cue .tracker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c1);
+  box-shadow: 0 0 8px var(--c1), 0 0 16px rgba(0,0,0,0.5);
+  transform: translate(-50%, -50%) rotate(calc(var(--p)*360deg)) translateY(-65px);
+}
+.breath-cue .ring::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(var(--c1) 0deg calc(var(--p)*180deg), var(--c2) calc(var(--p)*180deg) calc(var(--p)*360deg), rgba(0,0,0,0) calc(var(--p)*360deg) 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+          mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+  filter: drop-shadow(0 0 8px rgba(63,185,80,0.35));
+}
+.breath-cue .ring::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.10) 0deg 2deg, rgba(0,0,0,0) 2deg 6deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+          mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+  animation: hud-scan 6s linear infinite;
+}
+.breath-cue .glyph {
+  position: absolute;
+  font-size: 18px;
+  font-weight: 800;
+  background: linear-gradient(180deg, var(--c1), var(--c2));
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 12px rgba(0,0,0,0.6), 0 0 var(--glow) var(--c1);
+}
+.breath-cue.step-inhale .ring { transform: scale(calc(0.90 + 0.18 * var(--p))); }
+.breath-cue.step-exhale .ring { transform: scale(calc(1.08 - 0.18 * var(--p))); }
+.breath-cue.step-retain .ring { animation: kf-hold var(--dur) ease-in-out infinite alternate; }
+.breath-cue.step-sustain .ring { animation: kf-hold var(--dur) ease-in-out infinite alternate; }
+.breath-cue.step-inhale .glyph { transform: scale(calc(0.86 + 0.22 * var(--p))); }
+.breath-cue.step-exhale .glyph { transform: scale(calc(1.10 - 0.24 * var(--p))); }
+.breath-cue.step-retain .glyph { animation: kf-hold-dot var(--dur) ease-in-out infinite alternate; }
+.breath-cue.step-sustain .glyph { animation: kf-hold-dot var(--dur) ease-in-out infinite alternate; }
+.breath-cue.step-inhale { --color: #3fb950; --c1: #00ffc6; --c2: #00ff6a; }
+.breath-cue.step-retain { --color: #f59e0b; --c1: #ffd166; --c2: #fca311; }
+.breath-cue.step-exhale { --color: #58a6ff; --c1: #00a2ff; --c2: #7afcff; }
+.breath-cue.step-sustain { --color: #a78bfa; --c1: #a78bfa; --c2: #7c3aed; }
+.breath-label { display: none; }
+.breath-timer { display: none; }
+
+@keyframes hud-scan { to { transform: rotate(360deg); } }
+@keyframes hud-orbit { to { transform: rotate(360deg); } }
+@keyframes hud-reticle { to { transform: rotate(360deg); } }
+@keyframes hud-grid { to { transform: rotate(-360deg); } }
+.playback-mode .floating-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: #0b0e12;
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* 保留你现有样式 */
+.app-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow: auto;
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.sidebar-header h2 { margin: 0 0 8px; }
+.filters { display: flex; gap: 8px; margin-bottom: 8px; }
+.filters select, .filters input {
+  width: 50%;
+  padding: 6px 8px;
+  background: #0b0e12;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+}
+
+.route-list { list-style: none; padding: 0; margin: 0; }
+.route-item {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: #0b0e12;
+  transition: border-color .2s ease, transform .1s ease;
+}
+.route-item:hover { border-color: var(--primary); }
+.route-item.active { border-color: var(--accent); }
+.route-item .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.player-section { display: flex; flex-direction: column; }
+.player-container {
+  position: relative;
+  background: black;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+.media { width: 100%; height: 100%; display: none; }
+#videoPlayer { max-height: 70vh; }
+#youtubePlayer { aspect-ratio: 16/9; }
+
+.placeholder { color: var(--muted); }
+.placeholder { display: grid; place-items: center; text-align: center; padding: 12px; }
+
+.controls {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 10px; border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+.btn {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: #0b0e12; color: var(--text);
+  border-radius: 6px; cursor: pointer;
+  transition: border-color .2s ease, background .2s ease;
+}
+.btn:hover { border-color: var(--primary); }
+
+.control-group { display: flex; align-items: center; gap: 8px; }
+.control-group select, .control-group input[type="range"] {
+  accent-color: var(--primary);
+}
+
+.now-playing {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  /* 全屏视频布局：主区域不再预留侧栏 */
+  .app-main {
+    grid-template-columns: 1fr;
+  }
+  
+  /* 默认隐藏头/尾/控制，专注视频 */
+  .app-header, .controls, .now-playing, .app-footer { display: none; }
+  
+  /* 播放容器充满视口 */
+  .player-container {
+    position: relative;
+    background: black;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+  }
+  
+  /* 媒体元素充满屏幕（所有尺寸） */
+  .media.fullscreen-fit {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+  }
+  
+  /* 设置浮层（复用 #sidebar）——默认隐藏，打开时定位到右上角 */
+  .sidebar {
+    position: fixed;
+    right: 16px;
+    top: 16px;
+    width: 380px;
+    max-height: 80vh;
+    display: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    padding: 12px;
+    overflow: auto;
+    z-index: 10000;
+    pointer-events: auto;
+  }
+  .sidebar.open { display: block; }
+  
+  /* 浮层头部与按钮 */
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    position: sticky;
+    top: 0;
+    padding-bottom: 8px;
+    background: linear-gradient(to bottom, rgba(11,14,18,0.6), rgba(11,14,18,0));
+    z-index: 1;
+  }
+  .settings-title { font-weight: 700; letter-spacing: .2px; }
+  .close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,14,18,0.55);
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: border-color .2s ease, background .2s ease, transform .1s ease;
+  }
+  .close-btn:hover { border-color: var(--danger); background: rgba(11,14,18,0.75); transform: translateY(-1px); }
+  
+  /* Tab 导航与内容 */
+  .settings-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .tab-btn {
+    padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(11,14,18,0.5);
+    color: var(--text);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .tab-btn.active { border-color: var(--accent); background: rgba(11,14,18,0.7); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  /* 呼吸覆盖层右上角显示（移动端） */
+  .breath-overlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: block;
+    pointer-events: none;
+    z-index: 10002;
+  }
+  .breath-cue {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin-bottom: 8px;
+    --color: #3fb950;
+    --dur: 4s;
+    --p: 0;
+  }
+  .breath-cue .ring {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 0 24px rgba(0,0,0,0.35);
+    mix-blend-mode: screen;
+  }
+  .breath-cue .ring::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: conic-gradient(var(--color) 0deg calc(var(--p)*360deg), rgba(0,0,0,0) calc(var(--p)*360deg) 360deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+            mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+    filter: drop-shadow(0 0 8px rgba(63,185,80,0.35));
+  }
+  .breath-cue .ring::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+            mask: radial-gradient(farthest-side, transparent calc(50% - 8px), black 0);
+    animation: hud-scan 6s linear infinite;
+  }
+  .breath-cue .glyph {
+    position: absolute;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color);
+    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  }
+  .breath-cue.step-inhale .ring { animation: kf-expand var(--dur) ease-in-out 1 forwards; }
+  .breath-cue.step-exhale .ring { animation: kf-shrink var(--dur) ease-in-out 1 forwards; }
+  .breath-cue.step-retain .ring { animation: kf-hold var(--dur) ease-in-out infinite alternate; }
+  .breath-cue.step-sustain .ring { animation: kf-hold var(--dur) ease-in-out infinite alternate; }
+  .breath-cue.step-inhale .dot { animation: kf-expand-dot var(--dur) ease-in-out 1 forwards; }
+  .breath-cue.step-exhale .dot { animation: kf-shrink-dot var(--dur) ease-in-out 1 forwards; }
+  .breath-cue.step-retain .dot { animation: kf-hold-dot var(--dur) ease-in-out infinite alternate; }
+  .breath-cue.step-sustain .dot { animation: kf-hold-dot var(--dur) ease-in-out infinite alternate; }
+  .breath-cue.step-inhale { --color: #3fb950; }
+  .breath-cue.step-retain { --color: #f59e0b; }
+  .breath-cue.step-exhale { --color: #58a6ff; }
+  .breath-cue.step-sustain { --color: #a78bfa; }
+  @keyframes kf-expand { from { transform: scale(0.85); } to { transform: scale(1.08); } }
+  @keyframes kf-shrink { from { transform: scale(1.08); } to { transform: scale(0.85); } }
+  @keyframes kf-hold { from { transform: scale(1.0); } to { transform: scale(1.03); } }
+  @keyframes kf-expand-dot { from { transform: scale(0.8); } to { transform: scale(1.2); } }
+  @keyframes kf-shrink-dot { from { transform: scale(1.2); } to { transform: scale(0.8); } }
+  @keyframes kf-hold-dot { from { transform: scale(1.0); } to { transform: scale(1.08); } }
+  .breath-label { display: none; }
+  .breath-timer { display: none; }
+  
+  /* 悬浮设置按钮（右上角） */
+  .floating-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    background: #0b0e12;
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  /* 原有样式保留 */
+  .breath-panel {
+    margin: 12px 0;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #0b0e12;
+  }
+  .breath-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto auto;
+    gap: 8px;
+  }
+  .breath-desc {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .breath-info {
+    margin-top: 8px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #0b0e12;
+    font-size: 13px;
+  }
+  
+  /* 呼吸模式下让媒体充满背景 */
+  .media.fullscreen-fit {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+  }

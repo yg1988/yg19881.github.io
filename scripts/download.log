@@ -1,0 +1,55 @@
+2025-10-27 11:27:15  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 11:27:37  INFO ThreadId(19) biliup::uploader::credential: crates\biliup\src\uploader\credential.rs:343: 需要滑动验证码
+2025-10-27 11:29:51  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 11:30:32  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:54: 登录成功，数据保存在File { handle: 0x3cc, path: "\\\\?\\D:\\code\\drivenbreathe\\scripts\\cookies.json" }
+2025-10-27 11:34:59  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 11:35:00  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:239: user: 51070894937_bili
+2025-10-27 11:35:00  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:273: number of concurrent futures: 3
+2025-10-27 11:35:16  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=txa&zone=cs: 16242
+2025-10-27 11:35:26  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=alia&zone=cs: 9929
+2025-10-27 11:35:26  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:296: Line { os: Upos, probe_url: "//upos-cs-upcdnalia.bilivideo.com/OK", query: "probe_version=20250923&upcdn=alia&zone=cs", cost: 9929 }
+2025-10-27 11:35:26  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:148: pre_upload: {"build":2140000,"name":"Aalborg Denmark DriveBreathe.mp4","profile":"ugcupos/bup","r":"upos","size":826575198,"ssl":0,"version":"2.14.0"}
+2025-10-27 11:45:05  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:328: Upload completed: Aalborg Denmark DriveBreathe.mp4 => cost 578.10s, 1.43 MB/s.
+2025-10-27 11:45:05  INFO ThreadId(19) biliup::uploader::bilibili: crates\biliup\src\uploader\bilibili.rs:336: ResponseData { code: 21021, data: None, message: "稿件类型为转载时，转载来源不能为空", ttl: Some(1) }
+2025-10-27 11:51:41  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 11:51:42  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:239: user: 51070894937_bili
+2025-10-27 11:51:42  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:273: number of concurrent futures: 3
+2025-10-27 11:51:48  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=txa&zone=cs: 5312
+2025-10-27 11:51:55  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=alia&zone=cs: 6999
+2025-10-27 11:51:55  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:296: Line { os: Upos, probe_url: "//upos-cs-upcdntxa.bilivideo.com/OK", query: "probe_version=20250923&upcdn=txa&zone=cs", cost: 5312 }
+2025-10-27 11:51:55  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:148: pre_upload: {"build":2140000,"name":"Aarhus Denmark DriveBreathe.mp4","profile":"ugcupos/bup","r":"upos","size":614678570,"ssl":0,"version":"2.14.0"}
+2025-10-27 11:57:30  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:328: Upload completed: Aarhus Denmark DriveBreathe.mp4 => cost 335.16s, 1.83 MB/s.
+2025-10-27 11:57:31  INFO ThreadId(19) biliup::uploader::bilibili: crates\biliup\src\uploader\bilibili.rs:336: ResponseData { code: 21021, data: None, message: "稿件类型为转载时，转载来源不能为空", ttl: Some(1) }
+2025-10-27 11:57:31  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 11:57:32  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:239: user: 51070894937_bili
+2025-10-27 11:57:32  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:273: number of concurrent futures: 3
+2025-10-27 11:57:38  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=alia&zone=jd: 5894
+2025-10-27 11:57:46  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=txa&zone=jd: 7354
+2025-10-27 11:57:46  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:296: Line { os: Upos, probe_url: "//upos-jd-upcdnalia.bilivideo.com/OK", query: "probe_version=20250923&upcdn=alia&zone=jd", cost: 5894 }
+2025-10-27 11:57:46  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:148: pre_upload: {"build":2140000,"name":"Aarhus Denmark DriveBreathe.mp4","profile":"ugcupos/bup","r":"upos","size":614678570,"ssl":0,"version":"2.14.0"}
+2025-10-27 12:04:25  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:328: Upload completed: Aarhus Denmark DriveBreathe.mp4 => cost 398.27s, 1.54 MB/s.
+2025-10-27 12:04:25  INFO ThreadId(19) biliup::uploader::bilibili: crates\biliup\src\uploader\bilibili.rs:336: ResponseData { code: 21021, data: None, message: "稿件类型为转载时，转载来源不能为空", ttl: Some(1) }
+2025-10-27 12:04:26  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 12:04:26  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:239: user: 51070894937_bili
+2025-10-27 12:04:26  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:273: number of concurrent futures: 3
+2025-10-27 12:04:40  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=alia&zone=cs: 13522
+2025-10-27 12:04:51  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=txa&zone=cs: 11380
+2025-10-27 12:04:51  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:296: Line { os: Upos, probe_url: "//upos-cs-upcdntxa.bilivideo.com/OK", query: "probe_version=20250923&upcdn=txa&zone=cs", cost: 11380 }
+2025-10-27 12:04:51  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:148: pre_upload: {"build":2140000,"name":"Aarhus Denmark DriveBreathe.mp4","profile":"ugcupos/bup","r":"upos","size":614678570,"ssl":0,"version":"2.14.0"}
+2025-10-27 12:12:45  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 12:12:45  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:239: user: 51070894937_bili
+2025-10-27 12:12:45  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:273: number of concurrent futures: 3
+2025-10-27 12:12:51  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=alia&zone=cs: 5658
+2025-10-27 12:12:56  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=txa&zone=cs: 5098
+2025-10-27 12:12:56  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:296: Line { os: Upos, probe_url: "//upos-cs-upcdntxa.bilivideo.com/OK", query: "probe_version=20250923&upcdn=txa&zone=cs", cost: 5098 }
+2025-10-27 12:12:56  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:148: pre_upload: {"build":2140000,"name":"Aalborg Denmark DriveBreathe.mp4","profile":"ugcupos/bup","r":"upos","size":826575198,"ssl":0,"version":"2.14.0"}
+2025-10-27 12:21:56  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:328: Upload completed: Aalborg Denmark DriveBreathe.mp4 => cost 538.93s, 1.53 MB/s.
+2025-10-27 12:21:56  INFO ThreadId(19) biliup::uploader::bilibili: crates\biliup\src\uploader\bilibili.rs:336: ResponseData { code: 0, data: Some(Object {"aid": Number(115444207853412), "bvid": String("BV18TsyzXEd6"), "push_intro": Object {"show": Number(1), "text": String("打开系统通知开关，及时获悉稿件状态")}, "submitact_banner": Object {"hotact_text": String(""), "hotact_url": String(""), "list": Null}}), message: "0", ttl: Some(1) }
+2025-10-27 12:21:56  INFO ThreadId(19) biliup::uploader::bilibili: crates\biliup\src\uploader\bilibili.rs:338: APP接口投稿成功
+2025-10-27 12:24:55  INFO ThreadId(19) stream_gears::server: crates\stream-gears\src\server.rs:370: Tracing initialized with daily rotation
+2025-10-27 12:24:56  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:239: user: 51070894937_bili
+2025-10-27 12:24:56  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:273: number of concurrent futures: 3
+2025-10-27 12:25:02  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=txa&zone=cs: 5751
+2025-10-27 12:25:06  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:98: probe_version=20250923&upcdn=alia&zone=cs: 4503
+2025-10-27 12:25:06  INFO ThreadId(19) biliup_cli::uploader: crates\biliup-cli\src\uploader.rs:296: Line { os: Upos, probe_url: "//upos-cs-upcdnalia.bilivideo.com/OK", query: "probe_version=20250923&upcdn=alia&zone=cs", cost: 4503 }
+2025-10-27 12:25:06  INFO ThreadId(19) biliup::uploader::line: crates\biliup\src\uploader\line.rs:148: pre_upload: {"build":2140000,"name":"Aalborg Denmark DriveBreathe.mp4","profile":"ugcupos/bup","r":"upos","size":826575198,"ssl":0,"version":"2.14.0"}

@@ -1,0 +1,84 @@
+2025-10-27 11:45:05,653 __init__.py[line:13](Pid:24788 Tname:MainThread) ERROR Uncaught exception:
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Scripts\biliup.exe\__main__.py", line 7, in <module>
+    sys.exit(arg_parser())
+             ^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\site-packages\biliup\__main__.py", line 21, in arg_parser
+    asyncio.run(main())
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\site-packages\biliup\__main__.py", line 33, in main
+    await loop.run_in_executor(None, stream_gears.main_loop)
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: [1mUnknown Error[22m
+├╴at [3mD:\a\biliup\biliup\crates\biliup-cli\src\uploader.rs:103:14[23m
+│
+╰─▶ [1mResponseData { code: 21021, data: None, message: "稿件类型为转载时，转载来源不能为空", ttl: Some(1) }[22m
+    ╰╴at [3mD:\a\biliup\biliup\crates\biliup-cli\src\uploader.rs:103:14[23m
+2025-10-27 11:57:31,209 __init__.py[line:13](Pid:32824 Tname:MainThread) ERROR Uncaught exception:
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Scripts\biliup.exe\__main__.py", line 7, in <module>
+    sys.exit(arg_parser())
+             ^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\site-packages\biliup\__main__.py", line 21, in arg_parser
+    asyncio.run(main())
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\site-packages\biliup\__main__.py", line 33, in main
+    await loop.run_in_executor(None, stream_gears.main_loop)
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: [1mUnknown Error[22m
+├╴at [3mD:\a\biliup\biliup\crates\biliup-cli\src\uploader.rs:103:14[23m
+│
+╰─▶ [1mResponseData { code: 21021, data: None, message: "稿件类型为转载时，转载来源不能为空", ttl: Some(1) }[22m
+    ╰╴at [3mD:\a\biliup\biliup\crates\biliup-cli\src\uploader.rs:103:14[23m
+2025-10-27 12:04:25,685 __init__.py[line:13](Pid:32744 Tname:MainThread) ERROR Uncaught exception:
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Scripts\biliup.exe\__main__.py", line 7, in <module>
+    sys.exit(arg_parser())
+             ^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\site-packages\biliup\__main__.py", line 21, in arg_parser
+    asyncio.run(main())
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\asyncio\base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\site-packages\biliup\__main__.py", line 33, in main
+    await loop.run_in_executor(None, stream_gears.main_loop)
+  File "C:\Users\samyg\.pyenv\pyenv-win\versions\3.11.9\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: [1mUnknown Error[22m
+├╴at [3mD:\a\biliup\biliup\crates\biliup-cli\src\uploader.rs:103:14[23m
+│
+╰─▶ [1mResponseData { code: 21021, data: None, message: "稿件类型为转载时，转载来源不能为空", ttl: Some(1) }[22m
+    ╰╴at [3mD:\a\biliup\biliup\crates\biliup-cli\src\uploader.rs:103:14[23m
