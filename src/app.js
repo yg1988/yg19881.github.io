@@ -142,6 +142,57 @@
 
   function playSound(key) { const a = soundMap[key]; if (!a) return; try { a.currentTime=0; a.play().catch(()=>{});} catch(_){} }
 
+  function makePicker(selectEl, items) {
+    const wrap = document.createElement("div");
+    wrap.className = "picker";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "picker-btn";
+    btn.textContent = selectEl.value || (items[0]?.label || "Select");
+    const menu = document.createElement("div");
+    menu.className = "picker-menu";
+    const search = document.createElement("input");
+    search.className = "picker-search";
+    search.placeholder = "搜索...";
+    menu.appendChild(search);
+    const listBox = document.createElement("div");
+    menu.appendChild(listBox);
+    function render(filter) {
+      listBox.innerHTML = "";
+      const q = String(filter||"").trim().toLowerCase();
+      items.filter(it => !q || (it.label+" "+(it.desc||"")).toLowerCase().includes(q)).forEach(it => {
+        const row = document.createElement("div");
+        row.className = "picker-item";
+        const t = document.createElement("div"); t.className = "title"; t.textContent = it.label; row.appendChild(t);
+        if (it.desc) { const s = document.createElement("div"); s.className = "subtitle"; s.textContent = it.desc; row.appendChild(s); }
+        row.addEventListener("click", () => {
+          selectEl.value = it.value;
+          selectEl.dispatchEvent(new Event("change"));
+          btn.textContent = it.label;
+          wrap.classList.remove("open");
+        });
+        listBox.appendChild(row);
+      });
+    }
+    render("");
+    btn.addEventListener("click", () => { wrap.classList.toggle("open"); if (wrap.classList.contains("open")) { search.value=""; render(""); search.focus(); } });
+    document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) wrap.classList.remove("open"); });
+    search.addEventListener("input", () => render(search.value));
+    selectEl.classList.add("is-hidden");
+    selectEl.parentNode.insertBefore(wrap, selectEl);
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    selectEl.addEventListener("change", () => { const it = items.find(x => x.value === selectEl.value); if (it) btn.textContent = it.label; });
+    return {
+      setItems(next) {
+        items = next.slice();
+        render("");
+        const it = items.find(x => x.value === selectEl.value) || items[0];
+        if (it) { selectEl.value = it.value; selectEl.dispatchEvent(new Event("change")); btn.textContent = it.label; }
+      }
+    };
+  }
+
   function populateBreathOptions() {
     const programs = window.BREATHING_PROGRAMS || [];
     breathProgramSelect.innerHTML = "";
@@ -159,6 +210,13 @@
       opt.textContent = l.level;
       breathLevelSelect.appendChild(opt);
     });
+    const programItems = programs.map(p => ({ value: p.program, label: p.program, desc: p.description || "" }));
+    const toLevelItems = (p) => (p?.levels||[]).map(l => {
+      const perCycle = (l.sequence||[]).reduce((a,s)=>a+Number(s.duration||0),0);
+      return { value: l.level, label: l.level, desc: `周期 ${l.cycles} ｜ 每循环 ${perCycle}s` };
+    });
+    let programPicker = makePicker(breathProgramSelect, programItems);
+    let levelPicker = makePicker(breathLevelSelect, toLevelItems(first));
     breathProgramSelect.addEventListener("change", () => {
       const p = programs.find(x => x.program === breathProgramSelect.value);
       breathLevelSelect.innerHTML = "";
@@ -168,6 +226,7 @@
         opt.textContent = l.level;
         breathLevelSelect.appendChild(opt);
       });
+      levelPicker.setItems(toLevelItems(p));
     });
   }
 
