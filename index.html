@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
   <title>ZenDrive Breath — Virtual Driving Breathing Trainer</title>
@@ -22,141 +23,204 @@
   <link rel="preconnect" href="https://www.youtube.com" />
   <link rel="preconnect" href="https://i.ytimg.com" />
   <link rel="preconnect" href="https://img.youtube.com" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='24' width='48' height='20' rx='8' ry='8' fill='%2358a6ff'/%3E%3Ccircle cx='20' cy='46' r='4' fill='%23c9d1d9'/%3E%3Ccircle cx='44' cy='46' r='4' fill='%23c9d1d9'/%3E%3Cpath d='M14 24l8-10h20l8 10' fill='%230b0e12'/%3E%3C/svg%3E" />
-  <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='24' width='48' height='20' rx='8' ry='8' fill='%2358a6ff'/%3E%3Ccircle cx='20' cy='46' r='4' fill='%23c9d1d9'/%3E%3Ccircle cx='44' cy='46' r='4' fill='%23c9d1d9'/%3E%3Cpath d='M14 24l8-10h20l8 10' fill='%230b0e12'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='24' width='48' height='20' rx='8' ry='8' fill='%2358a6ff'/%3E%3Ccircle cx='20' cy='46' r='4' fill='%23c9d1d9'/%3E%3Ccircle cx='44' cy='46' r='4' fill='%23c9d1d9'/%3E%3Cpath d='M14 24l8-10h20l8 10' fill='%230b0e12'/%3E%3C/svg%3E" />
+  <link rel="shortcut icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='24' width='48' height='20' rx='8' ry='8' fill='%2358a6ff'/%3E%3Ccircle cx='20' cy='46' r='4' fill='%23c9d1d9'/%3E%3Ccircle cx='44' cy='46' r='4' fill='%23c9d1d9'/%3E%3Cpath d='M14 24l8-10h20l8 10' fill='%230b0e12'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
-</head>
+
 <body>
-  <!-- Landing 覆盖层（初始显示） -->
-  <div id="landing" class="landing">
-    <div class="landing-content">
-      <h1 class="brand-large">ZenDrive Breath</h1>
-      <p class="tagline">Virtual driving relaxation & breathing trainer</p>
-      <button id="enterBtn" class="btn">Enter</button>
-    </div>
-  </div>
+  <!-- (Removed duplicate Landing block; single instance appears later) -->
 
-  <header class="app-header">
-    <div class="brand">
-      <span class="logo">🚗</span>
-      <span class="title">ZenDrive Breath</span>
-    </div>
-    <div class="header-actions">
-      <label class="toggle">
-        <input type="checkbox" id="autoplayNext" />
-        Auto play next
-      </label>
-    </div>
-  </header>
+  <!-- (Removed duplicate Setup Wizard block; single instance appears later) -->
 
-  <main class="app-main">
-    <!-- 设置浮层（复用现有 sidebar） -->
-    <aside id="sidebar" class="sidebar">
-      <div class="settings-header">
-        <div class="settings-title">Settings</div>
-        <button id="closeSettingsBtn" class="btn close-btn">✖</button>
+  <!-- (Removed duplicate Main App block; single instance appears later) -->
+
+  
+
+  <body>
+    <!-- Landing Page -->
+    <div id="landing" class="landing">
+      <div class="landing-bg"></div>
+      <div class="landing-content">
+        <h1 class="brand-large">ZenDrive <span class="highlight">Breath</span></h1>
+        <p class="tagline">Virtual Driving & Breathing Trainer</p>
+
+        <div class="landing-actions">
+          <button id="quickStartBtn" class="action-card">
+            <div class="icon">🎲</div>
+            <div class="text">
+              <h3>Quick Start</h3>
+              <p>Random journey & breath pattern</p>
+            </div>
+          </button>
+
+          <button id="customSetupBtn" class="action-card">
+            <div class="icon">🛠️</div>
+            <div class="text">
+              <h3>Custom Setup</h3>
+              <p>Configure your perfect session</p>
+            </div>
+          </button>
+        </div>
       </div>
+    </div>
 
-      <div class="settings-tabs">
-        <button id="routeTabBtn" class="tab-btn active">Routes</button>
-        <button id="breathTabBtn" class="tab-btn">Breathing</button>
-      </div>
+    <!-- Setup Wizard (Overlay) -->
+    <div id="setupWizard" class="wizard-overlay">
+      <div class="wizard-container">
+        <div class="wizard-header">
+          <h2>Customize Session</h2>
+          <button id="closeWizardBtn" class="btn-icon">✖</button>
+        </div>
 
-      <!-- Routes Tab：把原“旅行路线”区域移到这里 -->
-      <div id="routeTab" class="tab-content active">
-        <div class="sidebar-header">
-          <h2>Routes</h2>
-          <div class="filters">
-            <select id="modeFilter">
-              <option value="">All modes</option>
-              <option value="drive">Drive</option>
-              <option value="walk">Walk</option>
-              <option value="train">Train</option>
-              <option value="cycle">Cycle</option>
-              <option value="drone">Drone</option>
-            </select>
-            <input id="searchInput" type="text" placeholder="Search city/title..." />
+        <div class="wizard-steps">
+          <!-- Step 1: Route -->
+          <div class="step active" data-step="1">
+            <h3>Step 1: Choose Route</h3>
+            <div class="filters">
+              <select id="wizardModeFilter">
+                <option value="">All Modes</option>
+                <option value="drive" selected>Drive</option>
+                <option value="walk">Walk</option>
+                <option value="cycle">Cycle</option>
+                <option value="train">Train</option>
+                <option value="drone">Drone</option>
+              </select>
+              <input id="wizardSearch" type="text" placeholder="Search city..." />
+            </div>
+            <ul id="wizardRouteList" class="route-list compact"></ul>
+            <div class="step-actions">
+              <button class="btn next-step-btn" disabled>Next ➔</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Breathing -->
+          <div class="step" data-step="2">
+            <h3>Step 2: Breathing Pattern</h3>
+            <div class="form-group">
+              <label>Program</label>
+              <select id="wizardBreathProgram"></select>
+            </div>
+            <div class="form-group">
+              <label>Level</label>
+              <select id="wizardBreathLevel"></select>
+            </div>
+            <div id="wizardBreathInfo" class="info-box"></div>
+            <div class="step-actions">
+              <button class="btn prev-step-btn">⬅ Back</button>
+              <button id="startSessionBtn" class="btn primary">Start Session 🚀</button>
+            </div>
           </div>
         </div>
-        <ul id="routeList" class="route-list"></ul>
       </div>
+    </div>
 
-      <!-- Breathing Tab：呼吸训练设置 -->
-      <div id="breathTab" class="tab-content">
-        <div class="breath-panel">
-          <h2>Breathing Trainer</h2>
-          <div class="breath-controls">
-            <select id="breathProgramSelect"></select>
-            <select id="breathLevelSelect"></select>
-            <button id="breathStartBtn" class="btn">Start</button>
-            <button id="breathStopBtn" class="btn">Stop</button>
+    <!-- Main App (Playback) -->
+    <main class="app-main">
+      <header class="app-header">
+        <div class="brand">
+          <span class="logo">🚗</span>
+          <span class="title">ZenDrive Breath</span>
+        </div>
+        <div class="header-actions">
+          <button id="settingsBtn" class="btn-icon" aria-label="Settings">⚙️</button>
+        </div>
+      </header>
+
+      <section class="player-section">
+        <div id="playerContainer" class="player-container">
+          <video id="videoPlayer" class="media" preload="auto" playsinline></video>
+          <iframe id="youtubePlayer" class="media" frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
+          <div id="placeholder" class="placeholder">Loading...</div>
+
+        <!-- New Dashboard Widget -->
+        <div id="dashboardWidget" class="dashboard-widget">
+            <div class="gauge-container">
+              <!-- SVG Gauge -->
+              <svg class="gauge-svg" viewBox="0 0 200 100">
+                <!-- Background Arc -->
+                <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.1)"
+                  stroke-width="12" />
+                <!-- Progress Arc (Dynamic) -->
+                <path id="gaugeProgress" class="gauge-progress" d="M 20 100 A 80 80 0 0 1 180 100" fill="none"
+                  stroke="#3fb950" stroke-width="12" stroke-dasharray="251.2" stroke-dashoffset="251.2" />
+                <!-- Needle -->
+                <g id="gaugeNeedle" class="gauge-needle" transform="rotate(0, 100, 100)">
+                  <line x1="100" y1="100" x2="20" y2="100" stroke="#fff" stroke-width="2" />
+                  <circle cx="100" cy="100" r="4" fill="#fff" />
+                </g>
+              </svg>
+
+              <div class="dashboard-center">
+                <div id="breathAction" class="action-text">READY</div>
+                <div id="breathTimer" class="timer-text">0.0</div>
+              </div>
+
+              <div class="dashboard-labels">
+                <span class="label-left">Start</span>
+                <span class="label-right">End</span>
+              </div>
+            </div>
+
+            <div class="dashboard-info">
+              <span id="breathCycleInfo">Cycle 1/4</span>
+            </div>
+        </div>
+        
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="settings-panel">
+          <div class="settings-header">
+            <div class="title">Settings</div>
+            <button id="settingsCloseBtn" class="btn-icon">✖</button>
           </div>
-          <div id="breathProgramDesc" class="breath-desc"></div>
-          <div id="breathInfo" class="breath-info"></div>
-          <small>Starts with a random driving video as background.</small>
+          <div class="settings-tabs">
+            <button class="tab-btn active" data-tab="routes">Routes</button>
+            <button class="tab-btn" data-tab="breathing">Breathing</button>
+          </div>
+          <div class="settings-body">
+            <div class="tab routes-tab active">
+              <div class="filters">
+                <select id="settingsModeFilter">
+                  <option value="">All Modes</option>
+                  <option value="drive" selected>Drive</option>
+                  <option value="walk">Walk</option>
+                  <option value="cycle">Cycle</option>
+                  <option value="train">Train</option>
+                  <option value="drone">Drone</option>
+                </select>
+                <input id="settingsSearch" type="text" placeholder="Search city..." />
+              </div>
+              <ul id="settingsRouteList" class="route-list compact"></ul>
+            </div>
+            <div class="tab breathing-tab">
+              <div class="form-group">
+                <label>Program</label>
+                <select id="settingsBreathProgram"></select>
+              </div>
+              <div class="form-group">
+                <label>Level</label>
+                <select id="settingsBreathLevel"></select>
+              </div>
+              <div id="settingsBreathInfo" class="info-box"></div>
+            </div>
+          </div>
         </div>
       </div>
-    </aside>
-
-    <section class="player-section">
-      <div id="playerContainer" class="player-container">
-        <!-- 视频播放器 -->
-        <video id="videoPlayer" class="media" preload="auto" playsinline></video>
-        <!-- 外链播放器 -->
-        <iframe id="youtubePlayer" class="media" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        <div id="placeholder" class="placeholder">Select a route on the left to start playback</div>
-
-        <!-- 呼吸提示覆盖层 -->
-        <div id="breathOverlay" class="breath-overlay">
-          <div id="breathCue" class="breath-cue"><div class="ring"></div><div class="glyph"></div></div>
-          <div id="breathBadge" class="breath-badge"><span class="badge-icon"></span><span class="badge-text"></span><span class="badge-countdown">0</span></div>
-          <div id="breathLabel" class="breath-label">Ready</div>
-          <div id="breathTimer" class="breath-timer">0</div>
-        </div>
-
-        <!-- 悬浮设置按钮 -->
-        <button id="openSettingsBtn" class="floating-btn" title="Settings">⚙️</button>
-      </div>
-
-      <!-- 原站内控制区（保持但默认隐藏，CSS 控制） -->
-      <div class="controls">
-        <button id="prevBtn" class="btn">⏮ Prev</button>
-        <button id="playPauseBtn" class="btn">▶️ Play</button>
-        <button id="nextBtn" class="btn">⏭ Next</button>
-
-        <label class="control-group">
-          倍速
-          <select id="rateSelect">
-            <option value="0.75">0.75x</option>
-            <option value="1" selected>1x</option>
-            <option value="1.25">1.25x</option>
-            <option value="1.5">1.5x</option>
-            <option value="2">2x</option>
-          </select>
-        </label>
-
-        <label class="control-group">
-          音量
-          <input id="volumeRange" type="range" min="0" max="1" step="0.05" value="0.8" />
-        </label>
-      </div>
-
-      <div class="now-playing" id="nowPlaying"></div>
     </section>
-  </main>
+    </main>
 
-  <footer class="app-footer">
-    <small>MVP 演示版本。请在 src/data/videos.js 中配置你的视频源。</small>
-  </footer>
+    <!-- Hidden Audio -->
+    <div id="audioContainer" style="display:none;"></div>
 
-  <!-- 适配小程序的数据为浏览器可用：注入一个 module 对象承接 exports -->
-  <!-- 在 app.js 前适配并加载小程序呼吸数据 -->
-  <!-- 加载小程序呼吸数据（保持） -->
-  <script>window.__BREATH_MODULE__={exports:{}};var module=window.__BREATH_MODULE__;</script>
-  <script src="miniprogram-4/breathing_data.js"></script>
-  <script>window.BREATHING_PROGRAMS=(module && module.exports && module.exports.programs)||[];module=undefined;</script>
-  <!-- 保持数据与应用脚本顺序 -->
-  <script src="src/data/videos.js"></script>
-  <script src="src/app.js"></script>
-</body>
-</html>
+    <!-- Scripts -->
+    <script>window.__BREATH_MODULE__ = { exports: {} }; var module = window.__BREATH_MODULE__;</script>
+    <script src="scripts/breathing_data.js"></script>
+    <script>window.BREATHING_PROGRAMS = (module && module.exports && module.exports.programs) || []; module = undefined;</script>
+    <script src="src/data/videos.js"></script>
+    <script src="src/app.js"></script>
+  </body>
+
+  </html>

@@ -1,664 +1,622 @@
 (function () {
+  // --- Data & State ---
   const routes = window.ROUTES || [];
-  const routeListEl = document.getElementById("routeList");
-  const modeFilterEl = document.getElementById("modeFilter");
-  const searchInputEl = document.getElementById("searchInput");
-
-  const videoEl = document.getElementById("videoPlayer");
-  const youtubeEl = document.getElementById("youtubePlayer");
-  const placeholderEl = document.getElementById("placeholder");
-
-  const playPauseBtn = document.getElementById("playPauseBtn");
-  const prevBtn = document.getElementById("prevBtn");
-  const nextBtn = document.getElementById("nextBtn");
-  const rateSelect = document.getElementById("rateSelect");
-  const volumeRange = document.getElementById("volumeRange");
-  const autoplayNextEl = document.getElementById("autoplayNext");
-  const nowPlayingEl = document.getElementById("nowPlaying");
-
-  function initSeoSite(){
-    let ldW = document.getElementById("ld-website");
-    if (!ldW) { ldW = document.createElement("script"); ldW.type = "application/ld+json"; ldW.id = "ld-website"; document.head.appendChild(ldW); }
-    const obj = { "@context":"https://schema.org", "@type":"WebSite", name:"ZenDrive Breath", url: location.origin + location.pathname };
-    ldW.textContent = JSON.stringify(obj);
-    const canEl = document.getElementById("canonical"); if (canEl) canEl.setAttribute("href", location.origin + location.pathname);
-    const ogUrl = document.getElementById("og-url"); if (ogUrl) ogUrl.setAttribute("content", location.href);
-  }
-  initSeoSite();
-
-  const sidebarEl = document.getElementById("sidebar");
-  const openSettingsBtn = document.getElementById("openSettingsBtn");
-  const closeSettingsBtn = document.getElementById("closeSettingsBtn");
-  const routeTabBtn = document.getElementById("routeTabBtn");
-  const breathTabBtn = document.getElementById("breathTabBtn");
-  const routeTab = document.getElementById("routeTab");
-  const breathTab = document.getElementById("breathTab");
-
-  const enterBtn = document.getElementById("enterBtn");
-
-  const LS_KEYS = {
-    autoplayNext: "zb.autoplayNext",
-    rate: "zb.rate",
-    volume: "zb.volume",
-    lastRouteId: "zb.lastRouteId",
-    mp4ProgressPrefix: "zb.mp4Progress.",
-    breathProgram: "zb.breath.program",
-    breathLevel: "zb.breath.level",
-  };
-  function lsGet(key, defVal) { try { const v = localStorage.getItem(key); return v===null?defVal:v; } catch(_) { return defVal; } }
-  function lsSet(key, val) { try { localStorage.setItem(key, String(val)); } catch(_) {} }
-
-  function openSettings() { sidebarEl.classList.add("open"); }
-  function closeSettings() { sidebarEl.classList.remove("open"); }
-  function activateTab(which) {
-    const isRoute = which === "route";
-    routeTabBtn.classList.toggle("active", isRoute);
-    breathTabBtn.classList.toggle("active", !isRoute);
-    routeTab.classList.toggle("active", isRoute);
-    breathTab.classList.toggle("active", !isRoute);
-  }
-
-  const rootEl = document.body;
-  function enterLanding() { rootEl.classList.add("landing-mode"); rootEl.classList.remove("playback-mode"); }
-  function leaveLandingToPlayback() { rootEl.classList.remove("landing-mode"); rootEl.classList.add("playback-mode"); openSettings(); activateTab("route"); }
-  function enterPlaybackMode() { rootEl.classList.remove("landing-mode"); rootEl.classList.add("playback-mode"); }
-
-  if (openSettingsBtn) openSettingsBtn.addEventListener("click", () => sidebarEl.classList.add("open"));
-  if (closeSettingsBtn) closeSettingsBtn.addEventListener("click", () => sidebarEl.classList.remove("open"));
-  if (routeTabBtn) routeTabBtn.addEventListener("click", () => activateTab("route"));
-  if (breathTabBtn) breathTabBtn.addEventListener("click", () => activateTab("breath"));
-  if (enterBtn) enterBtn.addEventListener("click", leaveLandingToPlayback);
-  if (enterBtn) enterBtn.addEventListener("click", () => {
-    const lastId = lsGet(LS_KEYS.lastRouteId, "");
-    if (!lastId) return;
-    applyFilters();
-    const idxFiltered = filtered.findIndex(r => r.id === lastId);
-    if (idxFiltered >= 0) selectIndex(idxFiltered, true);
-  });
-
-  document.addEventListener("keydown", (e) => {
-    const tag = (e.target && e.target.tagName) || "";
-    if (["INPUT", "SELECT", "TEXTAREA"].includes(tag)) return;
-    if (e.code === "KeyS") {
-      if (sidebarEl.classList.contains("open")) closeSettings(); else openSettings();
-    } else if (e.code === "Escape") {
-      closeSettings();
+  const programs = window.BREATHING_PROGRAMS || [];
+  
+  const state = {
+    route: null,
+    breathProgram: null,
+    breathLevel: null,
+    isPlaying: false,
+    breathingActive: false,
+    breathState: {
+      cycle: 0,
+      stepIndex: 0,
+      startTime: 0,
+      timerId: null,
+      rafId: null
     }
-    if (["INPUT", "SELECT", "TEXTAREA"].includes(tag)) return;
-
-    if (e.code === "Space") {
-      e.preventDefault();
-      playPauseBtn.click();
-    } else if (e.code === "ArrowRight") {
-      nextBtn.click();
-    } else if (e.code === "ArrowLeft") {
-      prevBtn.click();
-    } else if (e.code === "BracketRight") {
-      const idx = rateSelect.selectedIndex;
-      rateSelect.selectedIndex = Math.min(idx + 1, rateSelect.options.length - 1);
-      rateSelect.dispatchEvent(new Event("change"));
-    } else if (e.code === "BracketLeft") {
-      const idx = rateSelect.selectedIndex;
-      rateSelect.selectedIndex = Math.max(idx - 1, 0);
-      rateSelect.dispatchEvent(new Event("change"));
-    }
-  });
-
-  activateTab("route");
-
-  const breathProgramSelect = document.getElementById("breathProgramSelect");
-  const breathLevelSelect = document.getElementById("breathLevelSelect");
-  const breathStartBtn = document.getElementById("breathStartBtn");
-  const breathStopBtn = document.getElementById("breathStopBtn");
-  const breathOverlay = document.getElementById("breathOverlay");
-  const breathLabel = document.getElementById("breathLabel");
-  const breathTimer = document.getElementById("breathTimer");
-  const breathProgramDesc = document.getElementById("breathProgramDesc");
-  const breathInfoBox = document.getElementById("breathInfo");
-  const breathCue = document.getElementById("breathCue");
-  const breathBadge = document.getElementById("breathBadge");
-  const badgeIconEl = breathBadge ? breathBadge.querySelector(".badge-icon") : null;
-  const badgeTextEl = breathBadge ? breathBadge.querySelector(".badge-text") : null;
-  const badgeCountdownEl = breathBadge ? breathBadge.querySelector(".badge-countdown") : null;
-
-  let breathingActive = false;
-
-  const soundMap = {
-    preparing: new Audio("miniprogram-4/sounds/preparing.wav"),
-    start: new Audio("miniprogram-4/sounds/start.wav"),
-    inhale: new Audio("miniprogram-4/sounds/inhale.wav"),
-    retain: new Audio("miniprogram-4/sounds/retain.wav"),
-    exhale: new Audio("miniprogram-4/sounds/exhale.wav"),
-    sustain: new Audio("miniprogram-4/sounds/sustain.wav"),
-    well_done: new Audio("miniprogram-4/sounds/well_done.wav")
-  };
-  Object.values(soundMap).forEach(a => { try { a.preload = "auto"; a.volume = 0.9; } catch(_){} });
-
-  const breathState = {
-    program: null, level: null, sequence: [],
-    cycles: 0, currentCycle: 0, currentStepIndex: 0,
-    stepRemainingMs: 0, countdownInterval: null, stepTimer: null
   };
 
-  function playSound(key) { const a = soundMap[key]; if (!a) return; try { a.currentTime=0; a.play().catch(()=>{});} catch(_){} }
+  // --- DOM Elements ---
+  const els = {
+    landing: document.getElementById('landing'),
+    wizard: document.getElementById('setupWizard'),
+    appMain: document.querySelector('.app-main'),
+    
+    // Landing Buttons
+    quickStartBtn: document.getElementById('quickStartBtn'),
+    customSetupBtn: document.getElementById('customSetupBtn'),
+    
+    // Wizard
+    closeWizardBtn: document.getElementById('closeWizardBtn'),
+    wizardSteps: document.querySelectorAll('.step'),
+    nextStepBtn: document.querySelector('.next-step-btn'),
+    prevStepBtn: document.querySelector('.prev-step-btn'),
+    startSessionBtn: document.getElementById('startSessionBtn'),
+    wizardModeFilter: document.getElementById('wizardModeFilter'),
+    wizardSearch: document.getElementById('wizardSearch'),
+    wizardRouteList: document.getElementById('wizardRouteList'),
+    wizardBreathProgram: document.getElementById('wizardBreathProgram'),
+    wizardBreathLevel: document.getElementById('wizardBreathLevel'),
+    wizardBreathInfo: document.getElementById('wizardBreathInfo'),
+    
+    // Player
+    video: document.getElementById('videoPlayer'),
+    youtube: document.getElementById('youtubePlayer'),
+    placeholder: document.getElementById('placeholder'),
+    exitBtn: document.getElementById('exitBtn'),
+    settingsBtn: document.getElementById('settingsBtn'),
+    settingsPanel: document.getElementById('settingsPanel'),
+    settingsCloseBtn: document.getElementById('settingsCloseBtn'),
+    settingsTabBtns: document.querySelectorAll('.settings-tabs .tab-btn'),
+    settingsModeFilter: document.getElementById('settingsModeFilter'),
+    settingsSearch: document.getElementById('settingsSearch'),
+    settingsRouteList: document.getElementById('settingsRouteList'),
+    settingsBreathProgram: document.getElementById('settingsBreathProgram'),
+    settingsBreathLevel: document.getElementById('settingsBreathLevel'),
+    settingsBreathInfo: document.getElementById('settingsBreathInfo'),
+    
+    // Dashboard Widget
+    dashboard: document.getElementById('dashboardWidget'),
+    gaugeProgress: document.getElementById('gaugeProgress'),
+    gaugeNeedle: document.getElementById('gaugeNeedle'),
+    breathAction: document.getElementById('breathAction'),
+    breathTimer: document.getElementById('breathTimer'),
+    breathCycleInfo: document.getElementById('breathCycleInfo'),
+    dashboardWidget: document.getElementById('dashboardWidget')
+  };
 
-  function makePicker(selectEl, items) {
-    const wrap = document.createElement("div");
-    wrap.className = "picker";
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "picker-btn";
-    btn.textContent = selectEl.value || (items[0]?.label || "Select");
-    const menu = document.createElement("div");
-    menu.className = "picker-menu";
-    const search = document.createElement("input");
-    search.className = "picker-search";
-    search.placeholder = "搜索...";
-    menu.appendChild(search);
-    const listBox = document.createElement("div");
-    menu.appendChild(listBox);
-    function render(filter) {
-      listBox.innerHTML = "";
-      const q = String(filter||"").trim().toLowerCase();
-      items.filter(it => !q || (it.label+" "+(it.desc||"")).toLowerCase().includes(q)).forEach(it => {
-        const row = document.createElement("div");
-        row.className = "picker-item";
-        const t = document.createElement("div"); t.className = "title"; t.textContent = it.label; row.appendChild(t);
-        if (it.desc) { const s = document.createElement("div"); s.className = "subtitle"; s.textContent = it.desc; row.appendChild(s); }
-        row.addEventListener("click", () => {
-          selectEl.value = it.value;
-          selectEl.dispatchEvent(new Event("change"));
-          btn.textContent = it.label;
-          wrap.classList.remove("open");
-        });
-        listBox.appendChild(row);
-      });
-    }
-    render("");
-    btn.addEventListener("click", () => { wrap.classList.toggle("open"); if (wrap.classList.contains("open")) { search.value=""; render(""); search.focus(); } });
-    document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) wrap.classList.remove("open"); });
-    search.addEventListener("input", () => render(search.value));
-    selectEl.classList.add("is-hidden");
-    selectEl.parentNode.insertBefore(wrap, selectEl);
-    wrap.appendChild(btn);
-    wrap.appendChild(menu);
-    selectEl.addEventListener("change", () => { const it = items.find(x => x.value === selectEl.value); if (it) btn.textContent = it.label; });
-    return {
-      setItems(next) {
-        items = next.slice();
-        render("");
-        const it = items.find(x => x.value === selectEl.value) || items[0];
-        if (it) { selectEl.value = it.value; selectEl.dispatchEvent(new Event("change")); btn.textContent = it.label; }
+  // --- Initialization ---
+  function init() {
+    // Remove any duplicated sections by id to avoid broken event bindings
+    ['landing','setupWizard','videoPlayer','youtubePlayer','placeholder','dashboardWidget','quickStartBtn','customSetupBtn','settingsPanel','settingsBtn'].forEach((id)=>{
+      const nodes = document.querySelectorAll(`#${id}`);
+      for (let i = 1; i < nodes.length; i++) {
+        try { nodes[i].remove(); } catch(_) {}
       }
-    };
-  }
-
-  function populateBreathOptions() {
-    const programs = window.BREATHING_PROGRAMS || [];
-    breathProgramSelect.innerHTML = "";
-    programs.forEach(p => {
-      const opt = document.createElement("option");
-      opt.value = p.program;
-      opt.textContent = p.program;
-      breathProgramSelect.appendChild(opt);
     });
-    breathLevelSelect.innerHTML = "";
-    const first = programs[0];
-    (first?.levels || []).forEach(l => {
-      const opt = document.createElement("option");
-      opt.value = l.level;
-      opt.textContent = l.level;
-      breathLevelSelect.appendChild(opt);
+    setupLanding();
+    setupWizard();
+    setupPlayer();
+    setupSettings();
+    window.addEventListener('routes-ready', () => {
+      try { renderWizardRoutes(); } catch(_) {}
+      try { renderSettingsRoutes(); } catch(_) {}
     });
-    const programItems = programs.map(p => ({ value: p.program, label: p.program, desc: p.description || "" }));
-    const toLevelItems = (p) => (p?.levels||[]).map(l => {
-      const perCycle = (l.sequence||[]).reduce((a,s)=>a+Number(s.duration||0),0);
-      return { value: l.level, label: l.level, desc: `周期 ${l.cycles} ｜ 每循环 ${perCycle}s` };
-    });
-    let programPicker = makePicker(breathProgramSelect, programItems);
-    let levelPicker = makePicker(breathLevelSelect, toLevelItems(first));
-    breathProgramSelect.addEventListener("change", () => {
-      const p = programs.find(x => x.program === breathProgramSelect.value);
-      breathLevelSelect.innerHTML = "";
-      (p?.levels || []).forEach(l => {
-        const opt = document.createElement("option");
-        opt.value = l.level;
-        opt.textContent = l.level;
-        breathLevelSelect.appendChild(opt);
-      });
-      levelPicker.setItems(toLevelItems(p));
-    });
-  }
-
-  function updateBreathInfo() {
-    const programs = window.BREATHING_PROGRAMS || [];
-    const p = programs.find(x => x.program === breathProgramSelect.value);
-    const l = (p?.levels || []).find(x => x.level === breathLevelSelect.value);
-    if (breathProgramDesc) breathProgramDesc.textContent = p?.description || "";
-    if (breathInfoBox) {
-      if (!p || !l) { breathInfoBox.textContent = ""; return; }
-      const steps = (l.sequence||[]).map(s => `${s.step} ${Number(s.duration||0)}s`).join(" · ");
-      const perCycle = (l.sequence||[]).reduce((a,s)=>a+Number(s.duration||0),0);
-      const total = perCycle * Number(l.cycles||0);
-      const mm = String(Math.floor(total/60)).padStart(2,"0");
-      const ss = String(Math.floor(total%60)).padStart(2,"0");
-      breathInfoBox.textContent = `Level: ${l.level} ｜ Cycles: ${l.cycles} ｜ Per cycle: ${perCycle}s ｜ Total: ${mm}:${ss} ｜ ${steps}`;
-    }
-  }
-
-  function startBreathing() {
-    const programs = window.BREATHING_PROGRAMS || [];
-    const p = programs.find(x => x.program === breathProgramSelect.value);
-    const l = (p?.levels || []).find(x => x.level === breathLevelSelect.value);
-    if (!p || !l) { alert("Please select Program and Level"); return; }
-
-    document.body.classList.remove("landing-mode");
-    document.body.classList.add("playback-mode");
-
-    const candidates = routes.filter(r => (r.mode||"").toLowerCase()==="drive" && ["mp4","youtube","bilibili"].includes((r.type||"").toLowerCase()));
-    const chosen = candidates.length ? candidates[Math.floor(Math.random()*candidates.length)] : routes[0];
-    breathingActive = true;
-    if (chosen) loadRoute(chosen, true);
-  
-    breathState.program = p; breathState.level = l;
-    breathState.sequence = l.sequence || []; breathState.cycles = l.cycles || 1;
-    breathState.currentCycle = 1; breathState.currentStepIndex = 0;
-    breathOverlay.style.display = "block";
-  
-    playSound("preparing");
-    setTimeout(() => { playSound("start"); advanceBreathStep(); }, 400);
-  }
-
-  function stopBreathing() {
-    breathingActive = false;
-    breathOverlay.style.display = "none";
-    breathLabel.textContent = "Ready"; breathTimer.textContent = "0";
-    if (breathState.countdownInterval) { clearInterval(breathState.countdownInterval); breathState.countdownInterval = null; }
-    if (breathState.stepTimer) { clearTimeout(breathState.stepTimer); breathState.stepTimer = null; }
-  }
-
-  function advanceBreathStep() {
-    const seq = breathState.sequence; if (!seq || !seq.length) { playSound("well_done"); stopBreathing(); return; }
-    const step = seq[breathState.currentStepIndex]; const label = step?.step || ""; const durSec = Number(step?.duration || 0);
-  
-    if (durSec <= 0) {
-      breathState.currentStepIndex = (breathState.currentStepIndex + 1) % seq.length;
-      if (breathState.currentStepIndex === 0) { breathState.currentCycle += 1; if (breathState.currentCycle > breathState.cycles) { playSound("well_done"); stopBreathing(); return; } }
-      advanceBreathStep(); return;
-    }
-  
-    breathLabel.textContent = label; breathState.stepRemainingMs = durSec*1000;
-    const soundKey = ({Inhale:"inhale", Retain:"retain", Exhale:"exhale", Sustain:"sustain"})[label] || null;
-    if (soundKey) playSound(soundKey);
-    if (breathCue) {
-      breathCue.classList.remove("step-inhale","step-exhale","step-retain","step-sustain");
-      const cls = ({Inhale:"step-inhale", Retain:"step-retain", Exhale:"step-exhale", Sustain:"step-sustain"})[label] || "";
-      if (cls) breathCue.classList.add(cls);
-      breathCue.style.setProperty("--dur", `${durSec}s`);
-      breathCue.style.setProperty("--p", "0");
-      const icon = ({Inhale:"↑", Retain:"⏸", Exhale:"↓", Sustain:"•"})[label] || "";
-      breathCue.innerHTML = '<div class="grid"></div><div class="ring"></div><div class="reticle"></div><div class="tracker"></div><div class="glyph"></div>';
-      const g = breathCue.querySelector('.glyph'); if (g) g.textContent = icon;
-    }
-    if (breathBadge) {
-      breathBadge.classList.remove("step-inhale","step-exhale","step-retain","step-sustain");
-      const c2 = ({Inhale:"step-inhale", Retain:"step-retain", Exhale:"step-exhale", Sustain:"step-sustain"})[label] || "";
-      if (c2) breathBadge.classList.add(c2);
-      const icon = ({Inhale:"↑", Retain:"⏸", Exhale:"↓", Sustain:"•"})[label] || "";
-      const zh = ({Inhale:"吸", Retain:"屏", Exhale:"呼", Sustain:"停"})[label] || label;
-      if (badgeIconEl) badgeIconEl.textContent = icon;
-      if (badgeTextEl) badgeTextEl.textContent = zh;
-    }
-  
-    if (breathState.countdownInterval) clearInterval(breathState.countdownInterval);
-    breathState.countdownInterval = setInterval(() => {
-      breathState.stepRemainingMs = Math.max(0, breathState.stepRemainingMs - 100);
-      const sec = breathState.stepRemainingMs/1000; const t = (sec%1===0) ? String(sec|0) : sec.toFixed(1);
-      breathTimer.textContent = t; if (badgeCountdownEl) badgeCountdownEl.textContent = t;
-      const totalMs = Number(step?.duration||0) * 1000; if (totalMs > 0 && breathCue) {
-        const prog = Math.max(0, Math.min(1, 1 - breathState.stepRemainingMs/totalMs));
-        breathCue.style.setProperty('--p', String(prog));
-      }
-    }, 100);
-  
-    if (breathState.stepTimer) clearTimeout(breathState.stepTimer);
-    breathState.stepTimer = setTimeout(() => {
-      clearInterval(breathState.countdownInterval); breathState.countdownInterval = null;
-      breathState.currentStepIndex += 1;
-      if (breathState.currentStepIndex >= seq.length) {
-        breathState.currentStepIndex = 0; breathState.currentCycle += 1;
-        if (breathState.currentCycle > breathState.cycles) { playSound("well_done"); stopBreathing(); return; }
-      }
-      advanceBreathStep();
-    }, durSec*1000);
-  }
-
-  breathStartBtn.addEventListener("click", startBreathing);
-  breathStopBtn.addEventListener("click", stopBreathing);
-  
-  populateBreathOptions();
-  try {
-    const savedProgram = lsGet(LS_KEYS.breathProgram, "");
-    const savedLevel = lsGet(LS_KEYS.breathLevel, "");
-    if (savedProgram) { breathProgramSelect.value = savedProgram; breathProgramSelect.dispatchEvent(new Event("change")); }
-    if (savedLevel) breathLevelSelect.value = savedLevel;
-  } catch(_) {}
-  updateBreathInfo();
-
-  let filtered = routes.slice();
-  let currentIndex = -1;
-
-  function renderList() {
-      routeListEl.innerHTML = "";
-      filtered.forEach((route, idx) => {
-          const li = document.createElement("li");
-          li.className = "route-item" + (idx === currentIndex ? " active" : "");
-          li.dataset.index = String(idx);
-  
-          const title = document.createElement("div");
-          title.textContent = route.title || route.id;
-  
-          const meta = document.createElement("div");
-          meta.className = "meta";
-          meta.textContent = `${route.city || "Unknown city"} · ${route.mode || "Unknown mode"} · ${route.type.toUpperCase()}`;
-  
-          li.appendChild(title);
-          li.appendChild(meta);
-          li.addEventListener("click", () => {
-              enterPlaybackMode();
-              selectIndex(idx, true);
-          });
-  
-          routeListEl.appendChild(li);
-      });
-  }
-
-  function applyFilters() {
-    const modeVal = modeFilterEl.value.trim().toLowerCase();
-    const q = searchInputEl.value.trim().toLowerCase();
-    filtered = routes.filter(r => {
-      const modeOk = !modeVal || (r.mode || "").toLowerCase() === modeVal;
-      const text = `${r.title || ""} ${r.city || ""} ${r.mode || ""}`.toLowerCase();
-      const searchOk = !q || text.includes(q);
-      return modeOk && searchOk;
-    });
-    if (currentIndex >= filtered.length) {
-      currentIndex = -1;
-    }
-    renderList();
-  }
-
-  function selectIndex(idx, autoPlay = true) {
-    currentIndex = idx;
-    const route = filtered[idx];
-    if (!route) return;
-    loadRoute(route, autoPlay);
-    renderList();
-    updateNowPlaying(route);
-    saveToHash(route.id);
-    lsSet(LS_KEYS.lastRouteId, route.id);
-  }
-
-  function loadRoute(route, autoPlay = true) {
-      document.body.classList.remove("landing-mode");
-      document.body.classList.add("playback-mode");
-  
-      videoEl.style.display = "none";
-      youtubeEl.style.display = "none";
-      placeholderEl.style.display = "none";
-  
-      videoEl.pause();
-      playPauseBtn.textContent = "▶️ Play";
-      playPauseBtn.style.display = "inline-block";
-      rateSelect.style.display = "";
-      volumeRange.style.display = "";
-      youtubeEl.style.pointerEvents = "auto";
-      youtubeEl.style.clipPath = "";
-  
-      if (route.type === "mp4") {
-        videoEl.src = route.src;
-        videoEl.playbackRate = Number(rateSelect.value) || 1;
-        videoEl.volume = Number(volumeRange.value) || 0.8;
-        videoEl.style.display = "block";
-        videoEl.classList.add("fullscreen-fit");
-        try { videoEl.muted = true; } catch(_){}
-        if (typeof breathingActive !== "undefined" && breathingActive) {
-          videoEl.controls = false;
-          videoEl.style.pointerEvents = "none";
-          playPauseBtn.style.display = "none";
-          rateSelect.style.display = "none";
-          volumeRange.style.display = "none";
-        }
-        if (autoPlay) {
-          videoEl.play().then(()=>{ playPauseBtn.textContent = "⏸ Pause"; }).catch(()=>{
-            playPauseBtn.textContent = "▶️ Play";
-            videoEl.controls = true;
-            try { videoEl.muted = false; } catch(_){}
-          });
-        }
-      } else if (route.type === "bilibili") {
-        let embedUrl = route.src;
-        try {
-            const u = new URL(route.src);
-            u.searchParams.set("autoplay", autoPlay ? "1" : "0");
-            embedUrl = u.toString();
-        } catch (_) {
-            embedUrl = route.src + (route.src.includes("?") ? "&" : "?") + `autoplay=${autoPlay ? "1" : "0"}`;
-        }
-  
-        youtubeEl.src = embedUrl;
-        youtubeEl.style.display = "block";
-        playPauseBtn.style.display = "none";
-        rateSelect.style.display = "none";
-        volumeRange.style.display = "none";
-        youtubeEl.style.pointerEvents = "none";
-        youtubeEl.style.clipPath = "inset(48px 0 96px 0)";
-        youtubeEl.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms");
-        youtubeEl.setAttribute("allow", "autoplay; fullscreen");
-        youtubeEl.setAttribute("referrerpolicy", "no-referrer");
-      } else if (route.type === "youtube") {
-        if (Array.isArray(route.variants) && route.variants.length) {
-          try {
-            const pick = route.variants[Math.floor(Math.random()*route.variants.length)] || route.youtubeId;
-            if (pick) route.youtubeId = pick;
-          } catch(_) {}
-        }
-        if (!route.youtubeId || /REPLACE_WITH_YOUTUBE_ID/i.test(String(route.youtubeId))) {
-          placeholderEl.textContent = "YouTube 视频未配置";
-          placeholderEl.style.display = "grid";
-          return;
-        }
-        const params = new URLSearchParams({
-            autoplay: autoPlay ? "1" : "0",
-            controls: "0",
-            rel: "0",
-            modestbranding: "1",
-            disablekb: "1",
-            fs: "0",
-            iv_load_policy: "3",
-            playsinline: "1"
-        });
-        youtubeEl.src = `https://www.youtube.com/embed/${route.youtubeId}?${params.toString()}`;
-        youtubeEl.style.display = "block";
-        youtubeEl.classList.add("fullscreen-fit");
-        youtubeEl.style.pointerEvents = "none";
-        playPauseBtn.style.display = "none";
-        rateSelect.style.display = "none";
-        volumeRange.style.display = "none";
-        youtubeEl.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
-        youtubeEl.setAttribute("referrerpolicy", "no-referrer");
-      } else {
-        placeholderEl.textContent = "Unsupported resource type";
-        placeholderEl.style.display = "grid";
-      }
-  }
-
-  function updateNowPlaying(route) {
-    const parts = [
-      route.title || route.id,
-      route.city ? `｜${route.city}` : "",
-      route.mode ? `｜${route.mode}` : "",
-      `｜${route.type.toUpperCase()}`
-    ].filter(Boolean);
-    nowPlayingEl.textContent = parts.join("");
-    const title = `${route.title || route.id} ｜ ZenDrive Breath`;
-    document.title = title;
-    const descEl = document.getElementById("meta-desc"); if (descEl) descEl.setAttribute("content", `在${route.city||''}虚拟驾驶视频背景下进行呼吸训练，帮助放松与专注。`);
-    const kwEl = document.getElementById("meta-keywords"); if (kwEl) kwEl.setAttribute("content", `${route.city||''}, 呼吸训练, 驾驶, 放松, ZenDrive, breathing trainer, virtual driving`);
-    const ogTitle = document.getElementById("og-title"); if (ogTitle) ogTitle.setAttribute("content", title);
-    const ogDesc = document.getElementById("og-desc"); if (ogDesc) ogDesc.setAttribute("content", `Breathing trainer with virtual driving in ${route.city||''}.`);
-    const twTitle = document.getElementById("tw-title"); if (twTitle) twTitle.setAttribute("content", title);
-    const twDesc = document.getElementById("tw-desc"); if (twDesc) twDesc.setAttribute("content", `在${route.city||''}视频背景下进行呼吸训练。`);
-    const imgUrl = route.youtubeId ? `https://img.youtube.com/vi/${route.youtubeId}/hqdefault.jpg` : "";
-    const ogImg = document.getElementById("og-image"); if (ogImg && imgUrl) ogImg.setAttribute("content", imgUrl);
-    const twImg = document.getElementById("tw-image"); if (twImg && imgUrl) twImg.setAttribute("content", imgUrl);
-    let ldV = document.getElementById("ld-video"); if (!ldV) { ldV = document.createElement("script"); ldV.type = "application/ld+json"; ldV.id = "ld-video"; document.head.appendChild(ldV); }
-    const ldObj = { "@context":"https://schema.org", "@type":"VideoObject", name: route.title || route.id, description: `Virtual driving breathing: ${route.city||''}`, thumbnailUrl: imgUrl? [imgUrl]:[], embedUrl: route.youtubeId? `https://www.youtube.com/embed/${route.youtubeId}`:"", contentUrl: route.youtubeId? `https://www.youtube.com/watch?v=${route.youtubeId}`:"", isFamilyFriendly: true };
-    ldV.textContent = JSON.stringify(ldObj);
-  }
-
-  function saveToHash(id) {
-    if (id) {
-      location.hash = `route=${encodeURIComponent(id)}`;
-    }
-  }
-
-  function restoreFromHash() {
+    
+    // Check for hash route (legacy support or direct link)
     const match = /route=([^&]+)/.exec(location.hash);
     if (match) {
       const id = decodeURIComponent(match[1]);
-      const idxAll = routes.findIndex(r => r.id === id);
-      if (idxAll >= 0) {
-        applyFilters();
-        const idxFiltered = filtered.findIndex(r => r.id === id);
-        if (idxFiltered >= 0) {
-          selectIndex(idxFiltered, false);
-        } else {
-          modeFilterEl.value = "";
-          searchInputEl.value = "";
-          applyFilters();
-          const idxAgain = filtered.findIndex(r => r.id === id);
-          if (idxAgain >= 0) selectIndex(idxAgain, false);
-        }
+      const route = routes.find(r => r.id === id);
+      if (route) {
+        // If route exists, just start with default breath settings
+        startSession(route, programs[0], programs[0].levels[0]);
       }
     }
   }
 
-  playPauseBtn.addEventListener("click", () => {
-    if (videoEl.style.display === "block") {
-      if (videoEl.paused) {
-        videoEl.play().then(() => {
-          playPauseBtn.textContent = "⏸ Pause";
-        }).catch(() => { });
+  // --- Landing Page Logic ---
+  function setupLanding() {
+    els.quickStartBtn.addEventListener('click', () => {
+      // Random Route
+      const driveRoutes = routes.filter(r => r.mode === 'drive');
+      const randomRoute = driveRoutes[Math.floor(Math.random() * driveRoutes.length)] || routes[0];
+      
+      // Random Program (prefer 'Relax' or similar if available, else random)
+      const randomProgram = programs[Math.floor(Math.random() * programs.length)];
+      const randomLevel = randomProgram.levels[0]; // Start with level 1 usually
+      
+      startSession(randomRoute, randomProgram, randomLevel);
+    });
+
+    els.customSetupBtn.addEventListener('click', () => {
+      openWizard();
+    });
+  }
+
+  // --- Wizard Logic ---
+  let currentWizardStep = 1;
+  let selectedRoute = null;
+
+  function openWizard() {
+    els.wizard.classList.add('active');
+    currentWizardStep = 1;
+    updateWizardSteps();
+    try { els.wizardModeFilter.value = 'drive'; } catch(_) {}
+    renderWizardRoutes();
+    populateBreathOptions();
+  }
+
+  function closeWizard() {
+    els.wizard.classList.remove('active');
+  }
+
+  function updateWizardSteps() {
+    els.wizardSteps.forEach(step => {
+      step.classList.toggle('active', parseInt(step.dataset.step) === currentWizardStep);
+    });
+  }
+
+  function setupWizard() {
+    els.closeWizardBtn.addEventListener('click', closeWizard);
+    
+    els.nextStepBtn.addEventListener('click', () => {
+      if (currentWizardStep < 2) {
+        currentWizardStep++;
+        updateWizardSteps();
+      }
+    });
+
+    els.prevStepBtn.addEventListener('click', () => {
+      if (currentWizardStep > 1) {
+        currentWizardStep--;
+        updateWizardSteps();
+      }
+    });
+
+    els.startSessionBtn.addEventListener('click', () => {
+      const pName = els.wizardBreathProgram.value;
+      const lName = els.wizardBreathLevel.value;
+      const prog = programs.find(p => p.program === pName);
+      const level = prog.levels.find(l => l.level === lName);
+      
+      if (selectedRoute && prog && level) {
+        startSession(selectedRoute, prog, level);
+        closeWizard();
+      }
+    });
+
+    // Route Filters
+    els.wizardModeFilter.addEventListener('change', renderWizardRoutes);
+    els.wizardSearch.addEventListener('input', renderWizardRoutes);
+    
+    // Breath Options
+    els.wizardBreathProgram.addEventListener('change', () => {
+      populateBreathLevels();
+      updateBreathInfo();
+    });
+    els.wizardBreathLevel.addEventListener('change', updateBreathInfo);
+  }
+
+  function renderWizardRoutes() {
+    const mode = els.wizardModeFilter.value.toLowerCase();
+    const search = els.wizardSearch.value.toLowerCase();
+    
+    const filtered = routes.filter(r => {
+      const m = (r.mode || '').toLowerCase();
+      const t = (r.title || '').toLowerCase() + ' ' + (r.city || '').toLowerCase();
+      return (!mode || m === mode) && (!search || t.includes(search));
+    });
+
+    els.wizardRouteList.innerHTML = '';
+    filtered.slice(0, 50).forEach(r => { // Limit to 50 for performance
+      const li = document.createElement('li');
+      li.className = 'route-item';
+      if (selectedRoute && selectedRoute.id === r.id) li.classList.add('selected');
+      
+      li.innerHTML = `
+        <div class="title">${r.title || r.city}</div>
+        <div class="meta">${r.city} · ${r.mode}</div>
+      `;
+      
+      li.addEventListener('click', () => {
+        selectedRoute = r;
+        document.querySelectorAll('.route-item').forEach(el => el.classList.remove('selected'));
+        li.classList.add('selected');
+        els.nextStepBtn.disabled = false;
+      });
+      
+      els.wizardRouteList.appendChild(li);
+    });
+  }
+
+  function populateBreathOptions() {
+    els.wizardBreathProgram.innerHTML = '';
+    programs.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.program;
+      opt.textContent = p.program;
+      els.wizardBreathProgram.appendChild(opt);
+    });
+    populateBreathLevels();
+    updateBreathInfo();
+  }
+
+  function populateBreathLevels() {
+    const pName = els.wizardBreathProgram.value;
+    const prog = programs.find(p => p.program === pName);
+    els.wizardBreathLevel.innerHTML = '';
+    if (prog) {
+      prog.levels.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.level;
+        opt.textContent = l.level;
+        els.wizardBreathLevel.appendChild(opt);
+      });
+    }
+  }
+
+  function updateBreathInfo() {
+    const pName = els.wizardBreathProgram.value;
+    const lName = els.wizardBreathLevel.value;
+    const prog = programs.find(p => p.program === pName);
+    const level = prog ? prog.levels.find(l => l.level === lName) : null;
+    
+    if (prog && level) {
+      const seqStr = level.sequence.map(s => `${s.step} ${s.duration}s`).join(' → ');
+      els.wizardBreathInfo.textContent = `${prog.description}\n\nSequence: ${seqStr}\nCycles: ${level.cycles}`;
+    }
+  }
+
+  // --- Session Logic ---
+  function startSession(route, program, level) {
+    state.route = route;
+    state.breathProgram = program;
+    state.breathLevel = level;
+    
+    // UI Transition
+    els.landing.style.display = 'none';
+    els.appMain.classList.add('visible');
+    els.dashboardWidget.classList.remove('hidden');
+    
+    // Load Video
+    loadRouteVideo(route);
+    
+    // Start Breathing
+    startBreathingLogic(level);
+    
+    try { if (audioCtx) audioCtx.resume(); } catch(_) {}
+  }
+
+  function loadRouteVideo(route) {
+    els.video.style.display = 'none';
+    els.youtube.style.display = 'none';
+    els.placeholder.style.display = 'none';
+    
+    if (route.type === 'mp4') {
+      els.video.src = route.src;
+      els.video.style.display = 'block';
+      fitAndCropMedia(els.video);
+      els.video.loop = true;
+      els.video.play().catch(e => console.log("Autoplay blocked", e));
+    } else if (route.type === 'youtube') {
+      els.youtube.style.display = 'block';
+      // Use existing YT logic or simple embed
+      const embedUrl = `https://www.youtube-nocookie.com/embed/${route.youtubeId}?autoplay=1&controls=0&mute=1&loop=1&playlist=${route.youtubeId}&playsinline=1`;
+      els.youtube.src = embedUrl;
+      fitAndCropMedia(els.youtube);
+    }
+  }
+
+  function setupPlayer() {
+    if (els.exitBtn) {
+      els.exitBtn.addEventListener('click', () => {
+        location.reload();
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      if (els.youtube.style.display === 'block') {
+        fitAndCropMedia(els.youtube);
+      } else if (els.video.style.display === 'block') {
+        fitAndCropMedia(els.video);
+      }
+    });
+  }
+
+  function openSettings() {
+    els.settingsPanel.classList.add('open');
+    try {
+      // Ensure Routes tab is active by default
+      els.settingsTabBtns.forEach(b => b.classList.remove('active'));
+      const routesBtn = Array.from(els.settingsTabBtns).find(b => b.dataset.tab === 'routes');
+      if (routesBtn) routesBtn.classList.add('active');
+      document.querySelector('.routes-tab').classList.add('active');
+      document.querySelector('.breathing-tab').classList.remove('active');
+      // Default to Drive and clear search, then render
+      if (els.settingsModeFilter) els.settingsModeFilter.value = 'drive';
+      if (els.settingsSearch) els.settingsSearch.value = '';
+      renderSettingsRoutes();
+    } catch(_) {}
+  }
+  function closeSettings() { els.settingsPanel.classList.remove('open'); }
+
+  function setupSettings() {
+    if (!els.settingsBtn && els.exitBtn) {
+      const btn = els.exitBtn;
+      const newBtn = btn.cloneNode(true);
+      newBtn.id = 'settingsBtn';
+      newBtn.textContent = 'Settings';
+      btn.parentNode.replaceChild(newBtn, btn);
+      els.settingsBtn = document.getElementById('settingsBtn');
+    }
+    if (els.settingsBtn) els.settingsBtn.addEventListener('click', openSettings);
+    if (els.settingsCloseBtn) els.settingsCloseBtn.addEventListener('click', closeSettings);
+    els.settingsTabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        els.settingsTabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        document.querySelector('.routes-tab').classList.toggle('active', tab === 'routes');
+        document.querySelector('.breathing-tab').classList.toggle('active', tab === 'breathing');
+      });
+    });
+    populateSettingsBreath();
+    try { els.settingsModeFilter.value = 'drive'; } catch(_) {}
+    renderSettingsRoutes();
+    els.settingsModeFilter.addEventListener('change', renderSettingsRoutes);
+    els.settingsSearch.addEventListener('input', renderSettingsRoutes);
+    els.settingsBreathProgram.addEventListener('change', () => { populateSettingsLevels(); updateSettingsBreathInfo(); applyBreathFromSettings(); });
+    els.settingsBreathLevel.addEventListener('change', () => { updateSettingsBreathInfo(); applyBreathFromSettings(); });
+  }
+
+  function renderSettingsRoutes() {
+    const mode = (els.settingsModeFilter.value || '').toLowerCase();
+    const search = (els.settingsSearch.value || '').toLowerCase();
+    const filtered = routes.filter(r => {
+      const m = (r.mode || '').toLowerCase();
+      const t = ((r.title || '') + ' ' + (r.city || '')).toLowerCase();
+      return (!mode || m === mode) && (!search || t.includes(search));
+    });
+    els.settingsRouteList.innerHTML = '';
+    filtered.slice(0, 100).forEach(r => {
+      const li = document.createElement('li');
+      li.className = 'route-item';
+      if (state.route && state.route.id === r.id) li.classList.add('selected');
+      li.innerHTML = `<div class="title">${r.title || r.city}</div><div class="meta">${r.city} · ${r.mode}</div>`;
+      li.addEventListener('click', () => {
+        state.route = r;
+        loadRouteVideo(r);
+        document.querySelectorAll('#settingsRouteList .route-item').forEach(el => el.classList.remove('selected'));
+        li.classList.add('selected');
+      });
+      els.settingsRouteList.appendChild(li);
+    });
+  }
+
+  function populateSettingsBreath() {
+    els.settingsBreathProgram.innerHTML = '';
+    programs.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.program;
+      opt.textContent = p.program;
+      els.settingsBreathProgram.appendChild(opt);
+    });
+    populateSettingsLevels();
+    updateSettingsBreathInfo();
+  }
+  function populateSettingsLevels() {
+    const pName = els.settingsBreathProgram.value;
+    const prog = programs.find(p => p.program === pName);
+    els.settingsBreathLevel.innerHTML = '';
+    if (prog) {
+      prog.levels.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.level;
+        opt.textContent = l.level;
+        els.settingsBreathLevel.appendChild(opt);
+      });
+    }
+  }
+  function updateSettingsBreathInfo() {
+    const pName = els.settingsBreathProgram.value;
+    const lName = els.settingsBreathLevel.value;
+    const prog = programs.find(p => p.program === pName);
+    const level = prog ? prog.levels.find(l => l.level === lName) : null;
+    if (prog && level) {
+      const seqStr = level.sequence.map(s => `${s.step} ${s.duration}s`).join(' → ');
+      els.settingsBreathInfo.textContent = `${prog.description}\n\nSequence: ${seqStr}\nCycles: ${level.cycles}`;
+    }
+  }
+  function applyBreathFromSettings() {
+    const pName = els.settingsBreathProgram.value;
+    const lName = els.settingsBreathLevel.value;
+    const prog = programs.find(p => p.program === pName);
+    const level = prog ? prog.levels.find(l => l.level === lName) : null;
+    if (prog && level) {
+      state.breathProgram = prog;
+      state.breathLevel = level;
+      state.breathingActive = false;
+      if (state.breathState.rafId) cancelAnimationFrame(state.breathState.rafId);
+      startBreathingLogic(level);
+    }
+  }
+
+  // Fit, overscan and crop to hide YouTube UI/title
+  function fitAndCropMedia(el) {
+    try {
+      const ar = 16/9;
+      const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+      const vh = window.innerHeight || document.documentElement.clientHeight || 720;
+      const r = vw / vh;
+      const topCrop = Math.round(vh * 0.08);
+      const bottomCrop = Math.round(vh * 0.12);
+      let overscan = 1 + (topCrop + bottomCrop)/vh + 0.04;
+      let h = vh * overscan;
+      let w = h * ar;
+      if (w < vw) {
+        overscan = Math.max(overscan, vw/(vh*ar));
+        h = vh * overscan;
+        w = h * ar;
+      }
+      el.style.position = 'absolute';
+      el.style.top = '50%';
+      el.style.left = '50%';
+      el.style.transform = 'translate(-50%, -50%)';
+      el.style.width = `${w}px`;
+      el.style.height = `${h}px`;
+      el.style.backgroundColor = '#000';
+      el.style.clipPath = `inset(${topCrop}px 0 ${bottomCrop}px 0)`;
+    } catch (_) {}
+  }
+
+  // --- Breathing Logic & Animation ---
+  // Use WebAudio beeps instead of external files to avoid 404s
+  let audioCtx = null;
+  const cueFreq = {
+    inhale: 520,
+    retain: 340,
+    exhale: 420,
+    sustain: 300,
+    start: 680,
+    done: 540
+  };
+  const soundFiles = {
+    inhale: 'sounds/inhale.wav',
+    exhale: 'sounds/exhale.wav',
+    retain: 'sounds/retain.wav',
+    sustain: 'sounds/sustain.wav',
+    start: 'sounds/start.wav',
+    preparing: 'sounds/preparing.wav',
+    done: 'sounds/well_done.wav'
+  };
+  const soundAudio = {};
+  Object.keys(soundFiles).forEach((k)=>{ const a = new Audio(soundFiles[k]); a.preload = 'auto'; soundAudio[k] = a; });
+  function beep(name) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const freq = cueFreq[name];
+      if (!freq || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const now = audioCtx.currentTime;
+      const dur = name === 'start' ? 0.18 : name === 'done' ? 0.22 : 0.14;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.06, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now); osc.stop(now + dur + 0.02);
+    } catch (_) {}
+  }
+  function playSound(name) {
+    try {
+      const a = soundAudio[name];
+      if (a) { a.currentTime = 0; a.play().catch(()=> beep(name)); } else { beep(name); }
+    } catch(_) { beep(name); }
+  }
+
+  function startBreathingLogic(level) {
+    state.breathingActive = true;
+    state.breathState.cycle = 1;
+    state.breathState.stepIndex = 0;
+    
+    playSound('start');
+    runStartDelay();
+  }
+
+  function runStartDelay() {
+    if (!state.breathingActive) return;
+    const level = state.breathLevel;
+    const duration = 2000;
+    state.breathState.startTime = Date.now();
+    updateDashboardUI({ step: 'START' }, state.breathState.cycle, level.cycles);
+    if (state.breathState.rafId) cancelAnimationFrame(state.breathState.rafId);
+    function animate() {
+      const now = Date.now();
+      const elapsed = now - state.breathState.startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      updateGauge(progress, 'START');
+      els.breathTimer.textContent = ((duration - elapsed) / 1000).toFixed(1);
+      if (progress < 1) {
+        state.breathState.rafId = requestAnimationFrame(animate);
       } else {
-        videoEl.pause();
-        playPauseBtn.textContent = "▶️ Play";
+        runBreathStep();
       }
-    } else {
-      alert("Playback is controlled by the embedded player");
     }
-  });
-
-  prevBtn.addEventListener("click", () => {
-    if (filtered.length === 0) return;
-    const prev = (currentIndex - 1 + filtered.length) % filtered.length;
-    selectIndex(prev, true);
-  });
-
-  nextBtn.addEventListener("click", () => {
-    if (filtered.length === 0) return;
-    const next = (currentIndex + 1) % filtered.length;
-    selectIndex(next, true);
-  });
-
-  rateSelect.addEventListener("change", () => {
-    const rate = Number(rateSelect.value) || 1;
-    if (videoEl.style.display === "block") {
-      videoEl.playbackRate = rate;
-    }
-  });
-  rateSelect.addEventListener("change", () => { lsSet(LS_KEYS.rate, rateSelect.value); });
-
-  volumeRange.addEventListener("input", () => {
-    const vol = Number(volumeRange.value) || 0.8;
-    if (videoEl.style.display === "block") {
-      videoEl.volume = vol;
-    }
-  });
-  volumeRange.addEventListener("input", () => { lsSet(LS_KEYS.volume, volumeRange.value); });
-
-  autoplayNextEl.addEventListener("change", () => {
-    lsSet(LS_KEYS.autoplayNext, autoplayNextEl.checked ? "1" : "0");
-  });
-
-  videoEl.addEventListener("ended", () => {
-    if (autoplayNextEl.checked) {
-      nextBtn.click();
-    } else {
-      playPauseBtn.textContent = "▶️ Play";
-    }
-  });
-  videoEl.addEventListener("ended", () => {
-    const match = /route=([^&]+)/.exec(location.hash);
-    if (match) { const id = decodeURIComponent(match[1]); lsSet(LS_KEYS.mp4ProgressPrefix + id, "0"); }
-  });
-
-  let __lastSaveTs = 0;
-  videoEl.addEventListener("timeupdate", () => {
-    const now = Date.now();
-    if (now - __lastSaveTs < 1000) return;
-    __lastSaveTs = now;
-    const match = /route=([^&]+)/.exec(location.hash);
-    if (!match) return;
-    const id = decodeURIComponent(match[1]);
-    lsSet(LS_KEYS.mp4ProgressPrefix + id, videoEl.currentTime.toFixed(1));
-  });
-
-  videoEl.addEventListener("loadedmetadata", () => {
-    const match = /route=([^&]+)/.exec(location.hash);
-    if (!match) return;
-    const id = decodeURIComponent(match[1]);
-    const saved = Number(lsGet(LS_KEYS.mp4ProgressPrefix + id, "0")) || 0;
-    if (saved > 0) { try { videoEl.currentTime = saved; } catch(_){} }
-  });
-
-  videoEl.addEventListener("error", () => {
-    const match = /route=([^&]+)/.exec(location.hash);
-    const id = match ? decodeURIComponent(match[1]) : "";
-    placeholderEl.textContent = (id?`视频加载失败：${id}`:"视频加载失败") + "。请检查网络或更换视频源。";
-    placeholderEl.style.display = "grid";
-  });
-
-  window.addEventListener("hashchange", () => {
-    const match = /route=([^&]+)/.exec(location.hash);
-    if (match) lsSet(LS_KEYS.lastRouteId, decodeURIComponent(match[1]));
-  });
-
-  modeFilterEl.addEventListener("change", applyFilters);
-  searchInputEl.addEventListener("input", applyFilters);
-
-  applyFilters();
-  restoreFromHash();
-  window.addEventListener("routes-ready", () => {
-    applyFilters();
-    restoreFromHash();
-  });
-  try {
-    autoplayNextEl.checked = lsGet(LS_KEYS.autoplayNext, "0") === "1";
-    const savedRate = lsGet(LS_KEYS.rate, rateSelect.value);
-    if (savedRate) rateSelect.value = String(savedRate);
-    const savedVol = lsGet(LS_KEYS.volume, volumeRange.value);
-    if (savedVol) volumeRange.value = String(savedVol);
-  } catch(_) {}
-  
-  if (!/route=([^&]+)/.test(location.hash)) {
-    enterLanding();
-  } else {
-    document.body.classList.add("playback-mode");
+    state.breathState.rafId = requestAnimationFrame(animate);
   }
-  
-  breathProgramSelect.addEventListener("change", () => lsSet(LS_KEYS.breathProgram, breathProgramSelect.value));
-  breathLevelSelect.addEventListener("change", () => lsSet(LS_KEYS.breathLevel, breathLevelSelect.value));
-  breathProgramSelect.addEventListener("change", updateBreathInfo);
-  breathLevelSelect.addEventListener("change", updateBreathInfo);
+
+  function runBreathStep() {
+    if (!state.breathingActive) return;
+    
+    const level = state.breathLevel;
+    const step = level.sequence[state.breathState.stepIndex];
+    
+    if (!step) {
+      // End of sequence, check cycles
+      if (state.breathState.cycle < level.cycles) {
+        state.breathState.cycle++;
+        state.breathState.stepIndex = 0;
+        runBreathStep();
+      } else {
+        finishSession();
+      }
+      return;
+    }
+
+    // Update State
+    const duration = step.duration * 1000;
+    state.breathState.startTime = Date.now();
+    
+    // UI Updates
+    updateDashboardUI(step, state.breathState.cycle, level.cycles);
+    playSound(step.step.toLowerCase());
+
+    // Animation Loop
+    if (state.breathState.rafId) cancelAnimationFrame(state.breathState.rafId);
+    
+    function animate() {
+      const now = Date.now();
+      const elapsed = now - state.breathState.startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      updateGauge(progress, step.step);
+      els.breathTimer.textContent = ((duration - elapsed) / 1000).toFixed(1);
+      
+      if (progress < 1) {
+        state.breathState.rafId = requestAnimationFrame(animate);
+      } else {
+        // Step Complete
+        state.breathState.stepIndex++;
+        runBreathStep();
+      }
+    }
+    
+    state.breathState.rafId = requestAnimationFrame(animate);
+  }
+
+  function updateDashboardUI(step, currentCycle, totalCycles) {
+    els.breathAction.textContent = step.step;
+    els.breathCycleInfo.textContent = `Cycle ${currentCycle}/${totalCycles}`;
+    
+    // Update classes for color
+    els.dashboardWidget.className = 'dashboard-widget'; // reset
+    const cls = `state-${step.step.toLowerCase()}`;
+    els.dashboardWidget.classList.add(cls);
+  }
+
+  function updateGauge(progress, type) {
+    // Gauge is a semi-circle (180 deg).
+    // Align needle direction with color arc (left → right)
+    const startAngle = 0;
+    const endAngle = 180;
+    const currentAngle = startAngle + (progress * (endAngle - startAngle));
+    
+    els.gaugeNeedle.setAttribute('transform', `rotate(${currentAngle}, 100, 100)`);
+    
+    // Progress Bar (Stroke Dashoffset)
+    // Total length for semi-circle radius 80 is PI * 80 ≈ 251.2
+    const totalLen = 251.2;
+    const offset = totalLen * (1 - progress);
+    els.gaugeProgress.style.strokeDashoffset = offset;
+  }
+
+  function finishSession() {
+    state.breathingActive = false;
+    playSound('done');
+    els.breathAction.textContent = "DONE";
+    els.breathTimer.textContent = "0.0";
+    els.gaugeNeedle.setAttribute('transform', `rotate(0, 100, 100)`);
+    setTimeout(() => {
+      alert("Session Complete! Great job.");
+      location.reload();
+    }, 2000);
+  }
+
+  // Run Init
+  init();
 })();
