@@ -67,6 +67,60 @@
     dashboardWidget: document.getElementById('dashboardWidget')
   };
 
+  // YouTube IFrame API: enforce highest quality and suppress end-screen
+  let ytApiReady = false;
+  let ytPlayer = null;
+  let currentYouTubeId = null;
+  function ensureYouTubeApi() {
+    if (window.YT && window.YT.Player) { ytApiReady = true; return; }
+    if (document.getElementById('yt-iframe-api')) return;
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.id = 'yt-iframe-api';
+    document.head.appendChild(s);
+    window.onYouTubeIframeAPIReady = () => { ytApiReady = true; if (currentYouTubeId) setupOrUpdateYTPlayer(currentYouTubeId, true); };
+  }
+  function setHighestQuality(p) {
+    try {
+      if (typeof p.setPlaybackQualityRange === 'function') { p.setPlaybackQualityRange('highres'); return; }
+      if (typeof p.setPlaybackQuality === 'function') { p.setPlaybackQuality('highres'); p.setPlaybackQuality('hd1080'); }
+    } catch(_) {}
+  }
+  function setupOrUpdateYTPlayer(videoId, autoPlay) {
+    currentYouTubeId = videoId;
+    if (!ytApiReady) return;
+    const playerVars = {
+      autoplay: autoPlay ? 1 : 0,
+      controls: 0,
+      rel: 0,
+      modestbranding: 1,
+      disablekb: 1,
+      fs: 0,
+      iv_load_policy: 3,
+      playsinline: 1,
+      loop: 1,
+      playlist: videoId,
+      origin: location.origin
+    };
+    if (!ytPlayer) {
+      ytPlayer = new YT.Player('youtubePlayer', {
+        host: 'https://www.youtube-nocookie.com',
+        videoId: videoId,
+        playerVars,
+        events: {
+          onReady: (e) => { setHighestQuality(e.target); if (autoPlay) e.target.playVideo(); setTimeout(() => setHighestQuality(e.target), 800); },
+          onPlaybackQualityChange: () => { setHighestQuality(ytPlayer); },
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.ENDED) { try { ytPlayer.seekTo(0, true); ytPlayer.playVideo(); } catch(_) {} }
+            if (e.data === YT.PlayerState.PLAYING) { setHighestQuality(ytPlayer); }
+          }
+        }
+      });
+    } else {
+      try { ytPlayer.loadVideoById(videoId); setHighestQuality(ytPlayer); setTimeout(() => setHighestQuality(ytPlayer), 800); } catch(_) {}
+    }
+  }
+
   // --- Initialization ---
   function init() {
     // Remove any duplicated sections by id to avoid broken event bindings
@@ -278,14 +332,16 @@
     if (route.type === 'mp4') {
       els.video.src = route.src;
       els.video.style.display = 'block';
+      els.video.style.pointerEvents = 'none';
       fitAndCropMedia(els.video);
       els.video.loop = true;
       els.video.play().catch(e => console.log("Autoplay blocked", e));
     } else if (route.type === 'youtube') {
       els.youtube.style.display = 'block';
-      // Use existing YT logic or simple embed
-      const embedUrl = `https://www.youtube-nocookie.com/embed/${route.youtubeId}?autoplay=1&controls=0&mute=1&loop=1&playlist=${route.youtubeId}&playsinline=1`;
-      els.youtube.src = embedUrl;
+      // Use IFrame API to force quality & suppress recommendation
+      ensureYouTubeApi();
+      els.youtube.style.pointerEvents = 'none';
+      setupOrUpdateYTPlayer(route.youtubeId, true);
       fitAndCropMedia(els.youtube);
     }
   }
